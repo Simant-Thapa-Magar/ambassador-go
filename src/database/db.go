@@ -1,7 +1,7 @@
 package database
 
 import (
-	models "ambassador/src/model"
+	"ambassador/src/models"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
