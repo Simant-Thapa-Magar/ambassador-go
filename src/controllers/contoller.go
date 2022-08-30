@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"ambassador/src/database"
+	"ambassador/src/middlewares"
 	"ambassador/src/models"
 	"fmt"
 	"strconv"
@@ -83,22 +84,31 @@ func Login(c *fiber.Ctx) error {
 
 func User(c *fiber.Ctx) error {
 	var user models.User
-	cookie := c.Cookies("ambassadorJWT")
 
-	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte("secret"), nil
-	})
+	userId, err := middlewares.GetAuthenticatedUserId(c)
 
-	if err != nil || !token.Valid {
-		c.Status(fiber.StatusUnauthorized)
+	if err != nil || userId == 0 {
 		return c.JSON(fiber.Map{
-			"message": "Unauthorized access",
+			"message": "Cannot fetch user",
 		})
 	}
 
-	payload := token.Claims.(*jwt.StandardClaims)
-
-	database.DB.Where("id=?", payload.Subject).First(&user)
+	database.DB.Where("id=?", userId).First(&user)
 
 	return c.JSON(user)
+}
+
+func Logout(c *fiber.Ctx) error {
+	cookie := fiber.Cookie{
+		Name:     "ambassadorJWT",
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour),
+		HTTPOnly: true,
+	}
+
+	c.Cookie(&cookie)
+
+	return c.JSON(fiber.Map{
+		"message": "Logged Out",
+	})
 }
