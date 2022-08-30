@@ -4,15 +4,17 @@ import (
 	"fmt"
 
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type User struct {
 	Model
-	FirstName    string `json:"FirstName"`
-	LastName     string `json:"LastName"`
-	Email        string `json:"Email" gorm:"unique"`
-	Password     string `json:"Password"`
-	IsAmbassador bool   `json:"-"`
+	FirstName    string   `json:"FirstName"`
+	LastName     string   `json:"LastName"`
+	Email        string   `json:"Email" gorm:"unique"`
+	Password     string   `json:"Password"`
+	IsAmbassador bool     `json:"-"`
+	Revenue      *float64 `json:"revenue,omitempty" gorm:"-"`
 }
 
 func (user *User) SetPassword(pwd string) error {
@@ -25,4 +27,38 @@ func (user *User) SetPassword(pwd string) error {
 func (user *User) VerifyPassword(pwd string) error {
 	passError := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(pwd))
 	return passError
+}
+
+type Admin User
+
+func (admin *Admin) CalculateRevenue(db *gorm.DB) {
+	var orders []Order
+	var revenue float64
+
+	db.Preload("OrderItems").Where("user_id=? and complete=true", admin.Id).Find(&orders)
+
+	for _, order := range orders {
+		for _, orderItem := range order.OrderItems {
+			revenue += orderItem.AdminRevenue
+		}
+	}
+
+	admin.Revenue = &revenue
+}
+
+type Ambassador User
+
+func (ambassador *Ambassador) CalculateRevenue(db *gorm.DB) {
+	var orders []Order
+	var revenue float64
+
+	db.Preload("OrderItems").Where("user_id=? and complete=true", ambassador.Id).Find(&orders)
+
+	for _, order := range orders {
+		for _, orderItem := range order.OrderItems {
+			revenue += orderItem.AmbassadorRevenue
+		}
+	}
+
+	ambassador.Revenue = &revenue
 }
