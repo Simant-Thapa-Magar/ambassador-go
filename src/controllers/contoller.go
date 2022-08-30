@@ -112,3 +112,61 @@ func Logout(c *fiber.Ctx) error {
 		"message": "Logged Out",
 	})
 }
+
+func UpdateUser(c *fiber.Ctx) error {
+	var user models.User
+
+	userId, err := middlewares.GetAuthenticatedUserId(c)
+
+	if err != nil {
+		return c.JSON(fiber.Map{
+			"message": "Error getting user",
+		})
+	}
+
+	if err := c.BodyParser(&user); err != nil {
+		return c.JSON(fiber.Map{
+			"message": "Error getting user",
+		})
+	}
+
+	user.Id = userId
+
+	database.DB.Updates(&user)
+
+	return c.JSON(user)
+}
+
+func UpdatePassword(c *fiber.Ctx) error {
+	var data models.User
+
+	userId, err := middlewares.GetAuthenticatedUserId(c)
+
+	if err != nil {
+		return c.JSON(fiber.Map{
+			"message": "Error getting user",
+		})
+	}
+
+	if err := c.BodyParser(&data); err != nil {
+		return c.JSON(fiber.Map{
+			"message": "Error getting user",
+		})
+	}
+
+	user := models.User{
+		Id: userId,
+	}
+
+	e := user.SetPassword(data.Password)
+
+	if e != nil {
+		return c.JSON(fiber.Map{
+			"message": "Error updating password",
+		})
+	}
+
+	database.DB.Updates(&user)
+
+	return c.JSON(user)
+}
