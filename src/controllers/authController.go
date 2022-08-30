@@ -154,9 +154,9 @@ func UpdatePassword(c *fiber.Ctx) error {
 		})
 	}
 
-	user := models.User{
-		Id: userId,
-	}
+	user := models.User{}
+
+	user.Id = userId
 
 	e := user.SetPassword(data.Password)
 
