@@ -21,4 +21,12 @@ func SetUp(app *fiber.App) {
 	userRoutes.Get("/", controllers.User)
 	userRoutes.Put("update", controllers.UpdateUser)
 	userRoutes.Put("update-password", controllers.UpdatePassword)
+
+	authetication.Get("ambassadors", controllers.GetAmbassadors)
+
+	productRoutes := authetication.Group("product")
+	productRoutes.Post("/create", controllers.CreateProduct)
+	productRoutes.Get("/:id", controllers.GetProduct)
+	productRoutes.Put("/update/:id", controllers.UpdateProduct)
+	productRoutes.Delete("/delete/:id", controllers.DeleteProduct)
 }
