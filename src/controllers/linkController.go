@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"ambassador/src/database"
-	"ambassador/src/middlewares"
 	"ambassador/src/models"
 
 	"github.com/gofiber/fiber/v2"
@@ -10,11 +9,7 @@ import (
 
 func GetUserLinks(c *fiber.Ctx) error {
 	var links []models.Link
-	userId, err := middlewares.GetAuthenticatedUserId(c)
-
-	if err != nil {
-		return err
-	}
+	userId := c.Params("id")
 
 	database.DB.Where("user_id=?", userId).Find(&links)
 

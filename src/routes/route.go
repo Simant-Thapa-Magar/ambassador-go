@@ -21,7 +21,7 @@ func SetUp(app *fiber.App) {
 	userRoutes.Get("/", controllers.User)
 	userRoutes.Put("update", controllers.UpdateUser)
 	userRoutes.Put("update-password", controllers.UpdatePassword)
-	userRoutes.Get("links", controllers.GetUserLinks)
+	userRoutes.Get("/:id/links", controllers.GetUserLinks)
 
 	authetication.Get("ambassadors", controllers.GetAmbassadors)
 
@@ -32,4 +32,17 @@ func SetUp(app *fiber.App) {
 	productRoutes.Delete("/delete/:id", controllers.DeleteProduct)
 
 	authetication.Get("/orders", controllers.GetOrders)
+
+	ambassador := api.Group("ambassador")
+	ambassador.Post("register", controllers.Register)
+	ambassador.Post("login", controllers.Login)
+
+	ambassadorAuthentication := ambassador.Use(middlewares.IsAuthenticatedUser)
+	ambassadorAuthentication.Post("logout", controllers.Logout)
+
+	ambassadorUserRoutes := ambassadorAuthentication.Group("users")
+	ambassadorUserRoutes.Get("/", controllers.User)
+	ambassadorUserRoutes.Put("update", controllers.UpdateUser)
+	ambassadorUserRoutes.Put("update-password", controllers.UpdatePassword)
+
 }
