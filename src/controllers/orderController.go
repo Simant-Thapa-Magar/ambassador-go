@@ -5,6 +5,7 @@ import (
 	"ambassador/src/models"
 	"context"
 	"fmt"
+	"net/smtp"
 
 	"github.com/bxcodec/faker/v4"
 	"github.com/gofiber/fiber/v2"
@@ -133,9 +134,11 @@ func CompleteOrder(c *fiber.Ctx) error {
 
 	go func(o models.Order) {
 		ambassadorRevenue := 0.0
+		adminRevenue := 0.0
 
 		for _, orderItem := range o.OrderItems {
 			ambassadorRevenue += orderItem.AmbassadorRevenue
+			adminRevenue += orderItem.AdminRevenue
 		}
 
 		var user models.User
@@ -143,6 +146,34 @@ func CompleteOrder(c *fiber.Ctx) error {
 		database.DB.Where("id=?", o.UserId).Find(&user)
 
 		database.Cache.ZIncrBy(context.Background(), "rankings", ambassadorRevenue, user.GetFullname())
+
+		username := "131057e5ec981d"
+		password := "6991da74d1ad96"
+		host := "smtp.mailtrap.io"
+		addr := "smtp.mailtrap.io:2525"
+		auth := smtp.PlainAuth("", username, password, host)
+
+		ambassadorMessage := []byte(fmt.Sprintf("You have earned $%f from %s", ambassadorRevenue, order.Code))
+
+		ambassadordMailError := smtp.SendMail(addr, auth, "noreply@ambassadorgo.com", []string{o.AmbassadorEmail}, ambassadorMessage)
+
+		if ambassadordMailError != nil {
+			fmt.Println("Error sending mail to ambassador")
+			panic(ambassadordMailError)
+		} else {
+			fmt.Println("Mail sent successfully to ambassador")
+		}
+
+		adminMessage := []byte(fmt.Sprintf("Order #%d with a total of $%f has been completed", o.Id, adminRevenue))
+
+		adminEmailError := smtp.SendMail(addr, auth, "noreply@ambassadorgo.com", []string{"admin@ambassadorgo.com"}, adminMessage)
+
+		if adminEmailError != nil {
+			fmt.Println("Erro sending mail to admin")
+			panic(adminEmailError)
+		} else {
+			fmt.Println("Mail sent successfully to admin")
+		}
 	}(order)
 
 	return c.JSON(fiber.Map{
