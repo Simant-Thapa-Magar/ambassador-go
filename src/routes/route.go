@@ -45,4 +45,8 @@ func SetUp(app *fiber.App) {
 	ambassadorUserRoutes.Put("update", controllers.UpdateUser)
 	ambassadorUserRoutes.Put("update-password", controllers.UpdatePassword)
 
+	ambassadorProductRoutes := ambassadorAuthentication.Group("products")
+	ambassadorProductRoutes.Get("/frontend", controllers.ProductFrontend)
+	ambassadorProductRoutes.Get("/backend", controllers.ProductBackend)
+
 }

@@ -3,7 +3,11 @@ package controllers
 import (
 	"ambassador/src/database"
 	"ambassador/src/models"
+	"context"
+	"encoding/json"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -56,4 +60,63 @@ func DeleteProduct(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message": "Product deleted",
 	})
+}
+
+func ProductFrontend(c *fiber.Ctx) error {
+	var products []models.Product
+
+	ctx := context.Background()
+
+	cachedProducts, err := database.Cache.Get(ctx, "products_frontend").Result()
+
+	if err != nil {
+		// from db
+		database.DB.Find(&products)
+		productBytes, errMarshal := json.Marshal(products)
+		if errMarshal != nil {
+			panic(errMarshal)
+		}
+		if errKey := database.Cache.Set(ctx, "products_frontend", productBytes, 30*time.Minute).Err(); errKey != nil {
+			panic(errKey)
+		}
+	} else {
+		// from cache
+		json.Unmarshal([]byte(cachedProducts), &products)
+	}
+
+	return c.JSON(products)
+}
+
+func ProductBackend(c *fiber.Ctx) error {
+	var products, searchedProducts []models.Product
+
+	ctx := context.Background()
+
+	cachedProducts, err := database.Cache.Get(ctx, "products_backend").Result()
+
+	if err != nil {
+		database.DB.Find(&products)
+		productBytes, errMarshal := json.Marshal(products)
+		if errMarshal != nil {
+			panic(errMarshal)
+		}
+		if errKey := database.Cache.Set(ctx, "products_backend", productBytes, 30*time.Minute).Err(); errKey != nil {
+			panic(errKey)
+		}
+	} else {
+		json.Unmarshal([]byte(cachedProducts), &products)
+	}
+
+	if s := c.Query("q"); s != "" {
+		lower := strings.ToLower(s)
+		for _, product := range products {
+			if strings.Contains(strings.ToLower(product.Title), lower) || strings.Contains(strings.ToLower(product.Description), lower) {
+				searchedProducts = append(searchedProducts, product)
+			}
+		}
+	} else {
+		searchedProducts = products
+	}
+
+	return c.JSON(searchedProducts)
 }
