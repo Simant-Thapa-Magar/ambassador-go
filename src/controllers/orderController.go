@@ -3,8 +3,10 @@ package controllers
 import (
 	"ambassador/src/database"
 	"ambassador/src/models"
+	"context"
 	"fmt"
 
+	"github.com/bxcodec/faker/v4"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -55,6 +57,7 @@ func CreateOrder(c *fiber.Ctx) error {
 	}
 
 	order = models.Order{
+		TransactionId:   faker.CCNumber(),
 		Code:            request.Code,
 		UserId:          link.UserId,
 		AmbassadorEmail: link.User.Email,
@@ -101,4 +104,48 @@ func CreateOrder(c *fiber.Ctx) error {
 	}
 	tx.Commit()
 	return c.JSON(order)
+}
+
+type OrderComplete struct {
+	TransactionId string `json:"transaction_id"`
+}
+
+func CompleteOrder(c *fiber.Ctx) error {
+	var data OrderComplete
+	if err := c.BodyParser(&data); err != nil {
+		fmt.Println("Send proper body")
+		panic(err)
+	}
+
+	var order models.Order
+	database.DB.Preload("OrderItems").Where("transaction_id=?", data.TransactionId).Find(&order)
+
+	if order.Id == 0 {
+		c.Status(fiber.StatusBadRequest)
+		return c.JSON(fiber.Map{
+			"message": "Cheating karta hai tu !!",
+		})
+	}
+
+	order.Complete = true
+
+	database.DB.Save(&order)
+
+	go func(o models.Order) {
+		ambassadorRevenue := 0.0
+
+		for _, orderItem := range o.OrderItems {
+			ambassadorRevenue += orderItem.AmbassadorRevenue
+		}
+
+		var user models.User
+
+		database.DB.Where("id=?", o.UserId).Find(&user)
+
+		database.Cache.ZIncrBy(context.Background(), "rankings", ambassadorRevenue, user.GetFullname())
+	}(order)
+
+	return c.JSON(fiber.Map{
+		"message": "Order Completed",
+	})
 }

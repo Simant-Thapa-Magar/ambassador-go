@@ -56,4 +56,5 @@ func SetUp(app *fiber.App) {
 	checkoutRoute := api.Group("checkout")
 	checkoutRoute.Get("links/:code", controllers.GetLink)
 	checkoutRoute.Post("orders", controllers.CreateOrder)
+	checkoutRoute.Post("/orders/complete", controllers.CompleteOrder)
 }
