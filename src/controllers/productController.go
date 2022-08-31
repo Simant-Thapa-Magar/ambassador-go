@@ -89,7 +89,7 @@ func ProductFrontend(c *fiber.Ctx) error {
 }
 
 func ProductBackend(c *fiber.Ctx) error {
-	var products, searchedProducts []models.Product
+	var products, searchedProducts, data []models.Product
 
 	ctx := context.Background()
 
@@ -132,5 +132,33 @@ func ProductBackend(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(searchedProducts)
+	totalData := len(searchedProducts)
+	perPage := 9
+
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	endAt := page * perPage
+
+	lastPage := totalData / perPage
+
+	if totalData%perPage > 0 {
+		lastPage += 1
+	}
+
+	if totalData == 0 {
+		data = nil
+	} else if totalData < endAt {
+		page = lastPage
+		endAt = totalData
+		startAt := (page - 1) * perPage
+		data = searchedProducts[startAt:endAt]
+	} else {
+		data = searchedProducts[(page-1)*perPage : endAt]
+	}
+
+	return c.JSON(fiber.Map{
+		"data":      data,
+		"total":     totalData,
+		"page":      page,
+		"last_page": lastPage,
+	})
 }
