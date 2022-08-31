@@ -4,6 +4,7 @@ import (
 	"ambassador/src/database"
 	"ambassador/src/middlewares"
 	"ambassador/src/models"
+	"fmt"
 
 	"github.com/bxcodec/faker/v4"
 	"github.com/gofiber/fiber/v2"
@@ -91,4 +92,14 @@ func Stats(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(result)
+}
+
+func GetLink(c *fiber.Ctx) error {
+	code := c.Params("code")
+	fmt.Println("Code is ", code)
+	var link models.Link
+
+	database.DB.Preload("User").Preload("Products").Where("code=?", code).Find(&link)
+
+	return c.JSON(link)
 }
