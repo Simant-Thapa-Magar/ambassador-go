@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 
-	"github.com/go-redis/redis/v9"
+	"github.com/go-redis/redis/v8"
 )
 
 var Cache *redis.Client

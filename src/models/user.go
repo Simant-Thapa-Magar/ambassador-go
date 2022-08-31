@@ -29,6 +29,10 @@ func (user *User) VerifyPassword(pwd string) error {
 	return passError
 }
 
+func (user *User) GetFullname() string {
+	return user.FirstName + " " + user.LastName
+}
+
 type Admin User
 
 func (admin *Admin) CalculateRevenue(db *gorm.DB) {

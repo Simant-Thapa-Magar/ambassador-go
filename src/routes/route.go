@@ -49,4 +49,7 @@ func SetUp(app *fiber.App) {
 	ambassadorProductRoutes.Get("/frontend", controllers.ProductFrontend)
 	ambassadorProductRoutes.Get("/backend", controllers.ProductBackend)
 
+	ambassador.Post("link", controllers.CreateLink)
+	ambassador.Get("stats", controllers.Stats)
+	ambassador.Get("rankings", controllers.GetRanking)
 }
