@@ -47,6 +47,9 @@ func UpdateProduct(c *fiber.Ctx) error {
 
 	database.DB.Updates(&product)
 
+	go database.ClearCache("products_frontend")
+	go database.ClearCache("products_backend")
+
 	return c.JSON(product)
 }
 
