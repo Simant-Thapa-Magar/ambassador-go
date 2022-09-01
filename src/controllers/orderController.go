@@ -78,7 +78,7 @@ func CreateOrder(c *fiber.Ctx) error {
 			"message": "Error creating order",
 		})
 	}
-
+	orderTotal := 0.0
 	for _, requestedProduct := range request.Products {
 		var product models.Product
 		database.DB.Where("id=?", requestedProduct["product_id"]).Find(&product)
@@ -87,6 +87,7 @@ func CreateOrder(c *fiber.Ctx) error {
 			panic("Which product ?")
 		}
 		total := product.Price * float64(requestedProduct["quantity"])
+		orderTotal += total
 		orderItem := models.OrderItem{}
 		orderItem.OrderId = order.Id
 		orderItem.ProductTitle = product.Title
@@ -103,6 +104,8 @@ func CreateOrder(c *fiber.Ctx) error {
 			})
 		}
 	}
+	order.Total = orderTotal
+	tx.Save(&order)
 	tx.Commit()
 	return c.JSON(order)
 }

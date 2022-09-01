@@ -9,10 +9,10 @@ import (
 
 type User struct {
 	Model
-	FirstName    string   `json:"FirstName"`
-	LastName     string   `json:"LastName"`
-	Email        string   `json:"Email" gorm:"unique"`
-	Password     string   `json:"Password"`
+	FirstName    string   `json:"first_name"`
+	LastName     string   `json:"last_name"`
+	Email        string   `json:"email" gorm:"unique"`
+	Password     string   `json:"password"`
 	IsAmbassador bool     `json:"-"`
 	Revenue      *float64 `json:"revenue,omitempty" gorm:"-"`
 }
