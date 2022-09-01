@@ -26,6 +26,7 @@ func SetUp(app *fiber.App) {
 	authetication.Get("ambassadors", controllers.GetAmbassadors)
 
 	productRoutes := authetication.Group("products")
+	productRoutes.Get("/", controllers.GetProducts)
 	productRoutes.Post("/create", controllers.CreateProduct)
 	productRoutes.Get("/:id", controllers.GetProduct)
 	productRoutes.Put("/update/:id", controllers.UpdateProduct)

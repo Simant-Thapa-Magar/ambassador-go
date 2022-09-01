@@ -25,6 +25,12 @@ func CreateProduct(c *fiber.Ctx) error {
 	return c.JSON(product)
 }
 
+func GetProducts(c *fiber.Ctx) error {
+	var products []models.Product
+	database.DB.Find(&products)
+	return c.JSON(products)
+}
+
 func GetProduct(c *fiber.Ctx) error {
 	var product models.Product
 	pId := c.Params("id")
