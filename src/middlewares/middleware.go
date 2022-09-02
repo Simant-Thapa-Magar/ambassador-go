@@ -26,7 +26,6 @@ func GenerateToken(id uint, scope string) (string, error) {
 }
 
 func IsAuthenticatedUser(c *fiber.Ctx) error {
-
 	cookie := c.Cookies(COOKIE)
 
 	token, err := jwt.ParseWithClaims(cookie, &ClaimsWithScope{}, func(token *jwt.Token) (interface{}, error) {

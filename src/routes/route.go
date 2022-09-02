@@ -46,11 +46,10 @@ func SetUp(app *fiber.App) {
 	ambassadorUserRoutes.Put("update", controllers.UpdateUser)
 	ambassadorUserRoutes.Put("update-password", controllers.UpdatePassword)
 
-	ambassadorProductRoutes := ambassadorAuthentication.Group("products")
-	ambassadorProductRoutes.Get("/frontend", controllers.ProductFrontend)
-	ambassadorProductRoutes.Get("/backend", controllers.ProductBackend)
+	ambassadorAuthentication.Post("link", controllers.CreateLink)
 
-	ambassador.Post("link", controllers.CreateLink)
+	ambassador.Get("products/frontend", controllers.ProductFrontend)
+	ambassador.Get("products/backend", controllers.ProductBackend)
 	ambassador.Get("stats", controllers.Stats)
 	ambassador.Get("rankings", controllers.GetRanking)
 
