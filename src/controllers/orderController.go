@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/smtp"
 
-	"github.com/bxcodec/faker/v4"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -58,7 +57,6 @@ func CreateOrder(c *fiber.Ctx) error {
 	}
 
 	order = models.Order{
-		TransactionId:   faker.CCNumber(),
 		Code:            request.Code,
 		UserId:          link.UserId,
 		AmbassadorEmail: link.User.Email,
@@ -111,6 +109,7 @@ func CreateOrder(c *fiber.Ctx) error {
 }
 
 type OrderComplete struct {
+	OrderId       uint   `json:"order_id"`
 	TransactionId string `json:"transaction_id"`
 }
 
@@ -122,7 +121,7 @@ func CompleteOrder(c *fiber.Ctx) error {
 	}
 
 	var order models.Order
-	database.DB.Preload("OrderItems").Where("transaction_id=?", data.TransactionId).Find(&order)
+	database.DB.Preload("OrderItems").Where("id=?", data.OrderId).Find(&order)
 
 	if order.Id == 0 {
 		c.Status(fiber.StatusBadRequest)
@@ -131,6 +130,7 @@ func CompleteOrder(c *fiber.Ctx) error {
 		})
 	}
 
+	order.TransactionId = data.TransactionId
 	order.Complete = true
 
 	database.DB.Save(&order)
