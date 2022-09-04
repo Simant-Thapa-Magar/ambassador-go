@@ -3,9 +3,14 @@ package controllers
 import (
 	"ambassador/src/database"
 	"ambassador/src/models"
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"net/smtp"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -113,6 +118,13 @@ type OrderComplete struct {
 	TransactionId string `json:"transaction_id"`
 }
 
+type PaymentVerification struct {
+	amt float64
+	scd string
+	pid string
+	rid string
+}
+
 func CompleteOrder(c *fiber.Ctx) error {
 	var data OrderComplete
 	if err := c.BodyParser(&data); err != nil {
@@ -127,6 +139,15 @@ func CompleteOrder(c *fiber.Ctx) error {
 		c.Status(fiber.StatusBadRequest)
 		return c.JSON(fiber.Map{
 			"message": "Cheating karta hai tu !!",
+		})
+	}
+
+	isTransactionComplete := validatePayment(order, data)
+
+	if !isTransactionComplete {
+		c.Status(fiber.StatusPaymentRequired)
+		return c.JSON(fiber.Map{
+			"message": "Transaction not complete or valid",
 		})
 	}
 
@@ -182,4 +203,43 @@ func CompleteOrder(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message": "Order Completed",
 	})
+}
+
+func validatePayment(order models.Order, data OrderComplete) bool {
+	productId := strconv.Itoa(int(order.Id))
+	productId = `goReactNext_` + productId
+
+	var requestParams PaymentVerification
+
+	requestParams.amt = order.Total
+	requestParams.scd = "EPAYTEST"
+	requestParams.pid = productId
+	requestParams.rid = data.TransactionId
+
+	jsonData, err := json.Marshal(requestParams)
+
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, "https://uat.esewa.com.np//epay/transrec", bytes.NewBuffer(jsonData))
+
+	if err != nil {
+		fmt.Println("Request errpor", err)
+		return false
+	}
+
+	resp, respError := client.Do(req)
+	if respError != nil {
+		fmt.Println("Errored when sending request to the server")
+		return false
+	}
+
+	defer resp.Body.Close()
+	responseBody, responseError := ioutil.ReadAll(resp.Body)
+	if responseError != nil {
+		fmt.Println("Response Error")
+		return false
+	}
+
+	fmt.Println("response status", resp.Status)
+	fmt.Println(string(responseBody))
+	return true
 }
